@@ -239,6 +239,20 @@ function! GetOCamlIndent()
  elseif lline =~ '^\s*(\*' && line =~ '^\s*\*'
    let ind = ind + 1
 
+ else
+ " Don't cahnge indentation of this line
+ " for new lines (indent==0) use indentation of previous line
+
+ " This is for preventing removing indentation of these args:
+ "   let f x =
+ "     let y = x + 1 in
+ "     Printf.printf
+ "       "o"           << here
+ "       "oeuth"       << don't touch indentation
+
+   let i = indent(v:lnum)
+   return  i == 0 ? ind : i
+
  endif
 
  " Subtract a 'shiftwidth' after lines matching 'match ... with parser':
