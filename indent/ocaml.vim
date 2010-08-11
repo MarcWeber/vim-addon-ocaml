@@ -44,7 +44,7 @@ let s:obj = '^\s*\(constraint\|inherit\|initializer\|method\|val\)\>\|\<\(object
 let s:type = '^\s*\%(class\|let\|type\)\>.*='
 
 " Skipping pattern, for comments
-function s:GetLineWithoutFullComment(lnum)
+function! s:GetLineWithoutFullComment(lnum)
  let lnum = prevnonblank(a:lnum - 1)
  let lline = substitute(getline(lnum), '(\*.*\*)\s*$', '', '')
  while lline =~ '^\s*$' && lnum > 0
@@ -55,7 +55,7 @@ function s:GetLineWithoutFullComment(lnum)
 endfunction
 
 " Indent for ';;' to match multiple 'let'
-function s:GetInd(lnum, pat, lim)
+function! s:GetInd(lnum, pat, lim)
  let llet = search(a:pat, 'bW')
  let old = indent(a:lnum)
  while llet > 0
@@ -70,18 +70,18 @@ function s:GetInd(lnum, pat, lim)
 endfunction
 
 " Indent pairs
-function s:FindPair(pstart, pmid, pend)
+function! s:FindPair(pstart, pmid, pend)
  call search(a:pend, 'bW')
  return indent(searchpair(a:pstart, a:pmid, a:pend, 'bWn', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment"'))
 endfunction
 
 " Indent 'let'
-function s:FindLet(pstart, pmid, pend)
+function! s:FindLet(pstart, pmid, pend)
  call search(a:pend, 'bW')
  return indent(searchpair(a:pstart, a:pmid, a:pend, 'bWn', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment" || getline(".") =~ "^\\s*let\\>.*=.*\\<in\\s*$" || getline(prevnonblank(".") - 1) =~ s:beflet'))
 endfunction
 
-function GetOCamlIndent()
+function! GetOCamlIndent()
  " Find a non-commented line above the current line.
  let lnum = s:GetLineWithoutFullComment(v:lnum)
 
