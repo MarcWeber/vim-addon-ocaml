@@ -1,11 +1,21 @@
+TODO: tidy this help document up
+
+For now README.markdown is all youh have - bear with me.
+
 This plugin is work in progess - not much documentation present yet
 
-TODO: try these:
+most of this code originates here
+markus-vim: http://www.ocaml.info/vim/
+
+TODO ?
+http://jun.furuse.info/hacks/ocamlspotter/
 
 
-markus-vim: (Merge of omlet and other indentation code?)
-http://www.ocaml.info/vim/
+Emacs tools:
+============== 
+e emacs + ocaml-mode (core Caml) 
+ tuareg (http://forge.ocamlcore.org/projects/tuareg)
 
-Add .annot file support:
-" .annot files ?? for navigation? How to support them?
-" add support for http://code.google.com/p/ocaml-annot/wiki/Annot
+
+http://caml.inria.fr/cgi-bin/hump.en.cgi?contrib=105 taggae ?
+create tag files for vim? How does it compare with ctags?
