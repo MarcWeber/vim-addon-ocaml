@@ -91,40 +91,31 @@ endf
 fun! vim_addon_ocaml#ComplByType(type, arg, pat)
   " let g:cmds = []
   for mli in vim_addon_ocaml#MLIFiles()
-    " TODO enhance pattern!
-    let pat = a:pat == '' ? '.*' : a:pat.'.*'
-    let cmd = "sed -n '".'s/^\(external\|val\)[ \t]\+\('.pat.'[ \t]*:[ \t]*.*'.a:type.'.*\)/\2/p'."' ".shellescape(mli)
-    " call add(g:cmds, cmd)
-    let lines = split(system(cmd),"\n")
-
-    for l in lines
-      let name_type = split(l,"\s*:\s*")
-      " TODO put name at position of arg ?
-      " echo "adding ".string(name_type).' '.mli
-      call complete_add({
-            \  'word': '('.name_type[0].' '.a:arg.')'
-            \ ,'menu': name_type[1].' '.fnamemodify(mli, ':t')
-            \ } )
+    let pat = a:pat == '' ? '.*' : a:pat
+    let file = vim_addon_ocaml#ParseMLICached(mli)
+    for val in file['vals']
+      if  (a:pat == '' || val['name'] =~ '^'.a:pat)
+      \ && (a:type == '' || val['args'] =~ a:type)
+        call complete_add({
+              \  'word': val['name']
+              \ ,'menu': val['args'].'->'.val['return_type'].' '.fnamemodify(mli, ':t')
+              \ } )
+      endif
     endfor
     if complete_check() != 0 | return | endif
   endfor
+
 endf
 
 fun! vim_addon_ocaml#ComplByName(pat)
   for mli in vim_addon_ocaml#MLIFiles()
-    " TODO enhance pattern!
     let pat = a:pat == '' ? '.*' : a:pat
-    let cmd = "sed -n '".'s/^\(external\|val\)[ \t]\+\('.pat.'[ \t]*:[ \t]*.*\)/\2/p'."' ".shellescape(mli)
-    " call add(g:cmds, cmd)
-    let lines = split(system(cmd),"\n")
-
-    for l in lines
-      let name_type = split(l,"\s*:\s*")
-      if len(name_type) == 2
-        " echo "adding ".string(name_type).' '.mli
+    let file = vim_addon_ocaml#ParseMLICached(mli)
+    for val in file['vals']
+      if val['name'] =~ '^'.a:pat || a:pat == ''
         call complete_add({
-              \  'word': name_type[0]
-              \ ,'menu': name_type[1].' '.fnamemodify(mli, ':t')
+              \  'word': val['name']
+              \ ,'menu': val['args'].'->'.val['return_type'].' '.fnamemodify(mli, ':t')
               \ } )
       endif
     endfor
@@ -144,7 +135,7 @@ fun! vim_addon_ocaml#GlobalVals(pattern)
 endf
 
 " find files of tag file, use FilesOfTagFileCached {{{
-let s:ScanTagFile =  {'func': funcref#Function('vim_addon_ocaml#FilesOfTagFile'), 'version' : 5}
+let s:ScanTagFile =  {'func': funcref#Function('vim_addon_ocaml#FilesOfTagFile'), 'version' : 5, 'use_file_cache' :1}
 fun! vim_addon_ocaml#FilesOfTagFile(filename)
   return split(system("sed -n '".'s/^[^\t]*\t\([^\t]*.mli\)\t.*/\1/p'."' ".shellescape(a:filename)." | sort | uniq "),"\n")
 endf
@@ -152,6 +143,36 @@ endf
 fun! vim_addon_ocaml#FilesOfTagFileCached(file)
   return cached_file_contents#CachedFileContents(a:file, s:ScanTagFile)
 endf
+
+let s:ScanMLI =  {'func': funcref#Function('vim_addon_ocaml#ParseMLI'), 'version' : 2, 'use_file_cache' :1}
+fun! vim_addon_ocaml#ParseMLI(filename)
+  let pat='.*'
+  let cmd = "sed -n '".'s/^\(external\|val\)[ \t]\+\('.pat.'[ \t]*:[ \t]*.*\)/\2/p'."' ".shellescape(a:filename)
+  " call add(g:cmds, cmd)
+  let lines = split(system(cmd),"\n")
+
+  let vals = []
+  let file = {'vals': vals}
+
+  for l in lines
+    let name_type = matchlist(l,'\(\S\+\)\s*:\s*\(.*\)->\s*\([^=]*\)')
+    if len(name_type) > 2
+      let val = {
+        \ 'line' : l,
+        \ 'name' : name_type[1],
+        \ 'args' : substitute(name_type[2],'\s*$','',''),
+        \ 'return_type' :  name_type[3]
+        \ }
+      call add(vals, val)
+    endif
+  endfor
+  return file
+endf
+
+fun! vim_addon_ocaml#ParseMLICached(f)
+  return cached_file_contents#CachedFileContents(a:f, s:ScanMLI)
+endf
+
 "}}}
 
 fun! vim_addon_ocaml#MLIFiles()
