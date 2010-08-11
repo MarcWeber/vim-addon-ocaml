@@ -1,0 +1,11 @@
+This plugin is work in progess - not much documentation present yet
+
+TODO: try these:
+
+
+markus-vim: (Merge of omlet and other indentation code?)
+http://www.ocaml.info/vim/
+
+Add .annot file support:
+" .annot files ?? for navigation? How to support them?
+" add support for http://code.google.com/p/ocaml-annot/wiki/Annot
