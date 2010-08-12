@@ -15,6 +15,7 @@ let f x =
     x y
 
 completion details:
+====================
 
 All completion is based on .mli files found in all tag files.
 
@@ -44,6 +45,7 @@ For both b) and c) the completion result is
 Its not perfect - but its a starting point.
 
 TIPS:
+====================
 
 * learn about vim-addon-actions
 
