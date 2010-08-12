@@ -12,6 +12,6 @@ call actions#AddAction('ocamlopt current file', {'action': funcref#Function('act
 call vim_addon_completion#RegisterCompletionFunc({
       \ 'description' : '.ml ocaml completion based on various strategies',
       \ 'completeopt' : 'preview,menu,menuone',
-      \ 'scope' : 'ml',
+      \ 'scope' : 'ocaml',
       \ 'func': 'vim_addoon_ocaml#OcamlComplete'
       \ })
