@@ -38,7 +38,7 @@ endf
 " try to find useful stuff in scope and present this (TODO incomplete)
 fun! vim_addon_ocaml#OcamlComplete(findstart, base)
   if a:findstart
-    let [bc,ac] = haskellcomplete#BcAc()
+    let [bc,ac] = vim_addon_ocaml#BcAc()
     let s:match_text = matchstr(bc, '\zs[^()[\]{}\t ]*$')
     let s:start = len(bc)-len(matchstr(bc,'\S*$'))
     return s:start
@@ -145,7 +145,7 @@ fun! vim_addon_ocaml#ComplByName(pat)
   endfor
 endf
 
-function! haskellcomplete#BcAc()
+function! vim_addon_ocaml#BcAc()
   let pos = col('.') -1
   let line = getline('.')
   return [strpart(line,0,pos), strpart(line, pos, len(line)-pos)]
@@ -214,5 +214,3 @@ fun! vim_addon_ocaml#MLIFiles()
   endfor
   return mlis
 endf
-
-
