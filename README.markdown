@@ -52,3 +52,9 @@ TIPS:
   --regex-ocaml=/^[ \t]*external[ \t]+([A-Za-z0-9_]+)/\1/c,v/
 
 HapPy vimming!
+
+
+TODO / bugs
+==================
+local vals/vars in buf have no type hinting in completion
+... many more
