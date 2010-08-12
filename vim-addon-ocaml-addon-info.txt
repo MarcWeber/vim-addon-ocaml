@@ -6,6 +6,7 @@
   "repository" : {"type": "git", "url": "git://github.com/MarcWeber/vim-addon-ocaml.git"},
   "dependencies" : {
     "vim-addon-mw-utils": {},
+    "vim-addon-completion": {},
     "tlib": {},
     "vim-addon-actions": {},
     "vim-addon-background-cmd": {},
