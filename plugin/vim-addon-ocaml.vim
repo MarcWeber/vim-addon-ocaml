@@ -13,5 +13,5 @@ call vim_addon_completion#RegisterCompletionFunc({
       \ 'description' : '.ml ocaml completion based on various strategies',
       \ 'completeopt' : 'preview,menu,menuone',
       \ 'scope' : 'ocaml',
-      \ 'func': 'vim_addoon_ocaml#OcamlComplete'
+      \ 'func': 'vim_addon_ocaml#OcamlComplete'
       \ })

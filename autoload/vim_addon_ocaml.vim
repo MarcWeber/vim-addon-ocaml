@@ -50,22 +50,22 @@ fun! vim_addon_ocaml#OcamlComplete(findstart, base)
     if len(s:comma_compl) == 2
       " A) completion
       silent! unlet g:tmp
-      " move to cursor pos, so that type can be determined
-      exec 'normal  '.s:start.'|'
+
+      " move cursor to begin of thing at file. "x," move to x.
+      let pos = getpos('.')
+      let newpos = pos
+      " [bufnum, lnum, col, off]
+      let newpos[2] = s:start
+      call setpos('.', newpos)
+      let type = vim_addon_ocaml#TypeAtCursor()
+
+      call vim_addon_ocaml#ComplByType(g:tmp, s:comma_compl[0], s:comma_compl[1])
       " get type of x
-      py << EOF
-py parseOCamlAnnot()
-(begin_mark,end_mark) = get_marks(mode)
-let g:tmp = annot.get_type(begin_mark, end_mark)
-EOF
-      py let g:tmp = 
-      " silent! unlet g:tmp
 
       " for more complex types than string etc more complex processing has to
       " be dne here..
 
       " find all val lines in .mli files which take that argument
-      call vim_addon_ocaml#ComplByType(g:tmp, s:comma_compl[0], s:comma_compl[1])
     elseif len(s:type_compl) == 2
       call vim_addon_ocaml#ComplByType(s:type_compl[1], "arg", s:type_compl[0])
     else
@@ -88,6 +88,28 @@ EOF
   endif
 endf
 
+" dosen't echo
+" TODO merge with original code
+fun! vim_addon_ocaml#TypeAtCursor()
+  silent! unlet g:tmp
+  py << EOF
+parseOCamlAnnot()
+
+def vimQuote(s):
+  return '"%s"' % s.replace('"', '\\"').replace("\n", "\\n")
+
+def ocaml_type_current_pos():
+  try:
+    (begin_mark,end_mark) = get_marks("normal")
+    return annot.get_type(begin_mark, end_mark)
+  except:
+    return ""
+
+vim.command("let g:tmp = %s" % vimQuote(ocaml_type_current_pos()) )
+EOF
+  return g:tmp
+endfun
+
 fun! vim_addon_ocaml#ComplByType(type, arg, pat)
   " let g:cmds = []
   for mli in vim_addon_ocaml#MLIFiles()
@@ -97,7 +119,7 @@ fun! vim_addon_ocaml#ComplByType(type, arg, pat)
       if  (a:pat == '' || val['name'] =~ '^'.a:pat)
       \ && (a:type == '' || val['args'] =~ a:type)
         call complete_add({
-              \  'word': val['name']
+              \  'word': '('.val['name'].' '.a:arg.')'
               \ ,'menu': val['args'].'->'.val['return_type'].' '.fnamemodify(mli, ':t')
               \ } )
       endif
