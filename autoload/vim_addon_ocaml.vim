@@ -43,9 +43,15 @@ fun! vim_addon_ocaml#OcamlComplete(findstart, base)
     let s:start = len(bc)-len(matchstr(bc,'\S*$'))
     return s:start
   else
+
+
+    let patterns = vim_addon_completion#AdditionalCompletionMatchPatterns(a:base
+        \ , "ocaml_completion", { 'match_beginning_of_string': 1})
+    let additional_regex = get(patterns, 'vim_regex', "")
+
     let matches = []
-    let s:comma_compl = split(s:match_text,",",1)
-    let s:type_compl = split(s:match_text,":",1)
+    let s:comma_compl = split(a:base,",",1)
+    let s:type_compl = split(a:base,":",1)
 
     if len(s:comma_compl) == 2
       " A) completion
@@ -59,7 +65,7 @@ fun! vim_addon_ocaml#OcamlComplete(findstart, base)
       call setpos('.', newpos)
       let type = vim_addon_ocaml#TypeAtCursor()
 
-      call vim_addon_ocaml#ComplByType(g:tmp, s:comma_compl[0], s:comma_compl[1])
+      call vim_addon_ocaml#ComplByType(g:tmp, s:comma_compl[0], s:comma_compl[1], additional_regex)
       " get type of x
 
       " for more complex types than string etc more complex processing has to
@@ -67,22 +73,24 @@ fun! vim_addon_ocaml#OcamlComplete(findstart, base)
 
       " find all val lines in .mli files which take that argument
     elseif len(s:type_compl) == 2
-      call vim_addon_ocaml#ComplByType(s:type_compl[1], "arg", s:type_compl[0])
+      call vim_addon_ocaml#ComplByType(s:type_compl[1], "arg", s:type_compl[0], additional_regex)
     else
       " B) completion (names only)
       " add all vars in this buf
       for l in getline(0,line('$'))
         let name = matchstr(l, '\<let\s*\zs\S\+\ze')
-        call complete_add({
-              \  'word': name
-              \ ,'menu': "local buf"
-              \ } )
+        if name =~ '^'.a:base || (additional_regex != '' && name =~ additional_regex)
+          call complete_add({
+                \  'word': name
+                \ ,'menu': "local buf"
+                \ } )
+        endif
       endfor
 
       if complete_check() != 0 | return [] | endif
       " and everything which could possibly be imported (which can be found by
       " tag files)
-      call vim_addon_ocaml#ComplByName(s:match_text)
+      call vim_addon_ocaml#ComplByName(a:base, additional_regex)
     endif
     return matches
   endif
@@ -110,13 +118,13 @@ EOF
   return g:tmp
 endfun
 
-fun! vim_addon_ocaml#ComplByType(type, arg, pat)
+fun! vim_addon_ocaml#ComplByType(type, arg, pat, additional_regex)
   " let g:cmds = []
   for mli in vim_addon_ocaml#MLIFiles()
     let pat = a:pat == '' ? '.*' : a:pat
     let file = vim_addon_ocaml#ParseMLICached(mli)
     for val in file['vals']
-      if  (a:pat == '' || val['name'] =~ '^'.a:pat)
+      if  (a:pat == '' || val['name'] =~ '^'.a:pat || (a:additional_regex != "" && val['name'] =~ a:additional_regex))
       \ && (a:type == '' || val['args'] =~ a:type)
         call complete_add({
               \  'word': '('.val['name'].' '.a:arg.')'
@@ -129,12 +137,12 @@ fun! vim_addon_ocaml#ComplByType(type, arg, pat)
 
 endf
 
-fun! vim_addon_ocaml#ComplByName(pat)
+fun! vim_addon_ocaml#ComplByName(pat, additional_regex)
   for mli in vim_addon_ocaml#MLIFiles()
     let pat = a:pat == '' ? '.*' : a:pat
     let file = vim_addon_ocaml#ParseMLICached(mli)
     for val in file['vals']
-      if val['name'] =~ '^'.a:pat || a:pat == ''
+      if val['name'] =~ '^'.a:pat || a:pat == '' || (a:additional_regex != "" && val['name'] =~ a:additional_regex)
         call complete_add({
               \  'word': val['name']
               \ ,'menu': val['args'].'->'.val['return_type'].' '.fnamemodify(mli, ':t')
