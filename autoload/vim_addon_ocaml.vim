@@ -129,6 +129,7 @@ fun! vim_addon_ocaml#ComplByType(type, arg, pat, additional_regex)
         call complete_add({
               \  'word': '('.val['name'].' '.a:arg.')'
               \ ,'menu': val['args'].'->'.val['return_type'].' '.fnamemodify(mli, ':t')
+              \ ,'dup':1
               \ } )
       endif
     endfor
@@ -146,6 +147,7 @@ fun! vim_addon_ocaml#ComplByName(pat, additional_regex)
         call complete_add({
               \  'word': val['name']
               \ ,'menu': val['args'].'->'.val['return_type'].' '.fnamemodify(mli, ':t')
+              \ ,'dup':1
               \ } )
       endif
     endfor
