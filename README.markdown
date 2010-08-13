@@ -18,6 +18,9 @@ completion details:
 ====================
 
 All completion is based on .mli files found in all tag files.
+If you don't have tags, tell Vim which .mli files to use:
+
+let g:vim_addon_ocaml = { 'provide_additional_mlis': function('name of function returning a list of .mli files') }
 
 a) name completion:
   all .mli files are grepped for the name

@@ -1,6 +1,7 @@
 
 let s:dir = expand('<sfile>',':h:h')
 
+exec scriptmanager#DefineAndBind('s:c','g:vim_addon_ocaml','{}')
 
 if !exists('g:vim_ocaml_ctags_command_recursive')
   let g:vim_ocaml_ctags_command_recursive = 'ctags -R'
@@ -211,21 +212,29 @@ endf
 "}}}
 
 fun! vim_addon_ocaml#MLIFiles()
-  let mlis = []
+  let mlis = {}
   for tagfile in tagfiles()
     if filereadable(tagfile)
       let tagfile_dir = fnamemodify(tagfile,':h')
       for f in vim_addon_ocaml#FilesOfTagFileCached(tagfile)
         let abs = tagfile_dir.'/'.f
         if filereadable(abs)
-          call add(mlis, abs)
+          let mlis[expand(abs)] = 1
         elseif filereadable(f)
-          call add(mlis, f)
+          let mlis[expand(f)] = 1
         endif
       endfor
     endif
   endfor
-  return mlis
+
+  if has_key(s:c, "provide_additional_mlis")
+    let F = s:c['provide_additional_mlis']
+    for mli in call(additional_mlis)
+      let mlis[expand(mli)] = 1
+    endfor
+  endif
+
+  return keys(mlis)
 endf
 
 fun! vim_addon_ocaml#FunctionByType()
