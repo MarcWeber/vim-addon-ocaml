@@ -25,11 +25,9 @@ a) name completion:
 
 b) type completion:
 
-  con:str  -> will find concat : string -> string
+  con:str           finnds concat : string -> string
 
-  To find all functions which have string in their type use
-
-  :string instead
+  :^int->string$    finds string_of_int
 
 c) var based completion (not that well tested)
 

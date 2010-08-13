@@ -65,7 +65,7 @@ fun! vim_addon_ocaml#OcamlComplete(findstart, base)
       call setpos('.', newpos)
       let type = vim_addon_ocaml#TypeAtCursor()
 
-      call vim_addon_ocaml#ComplByType(g:tmp, s:comma_compl[0], s:comma_compl[1], additional_regex)
+      call vim_addon_ocaml#ComplByType(g:tmp, s:comma_compl[0], s:comma_compl[1], additional_regex, 1)
       " get type of x
 
       " for more complex types than string etc more complex processing has to
@@ -73,7 +73,7 @@ fun! vim_addon_ocaml#OcamlComplete(findstart, base)
 
       " find all val lines in .mli files which take that argument
     elseif len(s:type_compl) == 2
-      call vim_addon_ocaml#ComplByType(s:type_compl[1], "arg", s:type_compl[0], additional_regex)
+      call vim_addon_ocaml#ComplByType(s:type_compl[1], "arg", s:type_compl[0], additional_regex, 0)
     else
       " B) completion (names only)
       " add all vars in this buf
@@ -118,16 +118,18 @@ EOF
   return g:tmp
 endfun
 
-fun! vim_addon_ocaml#ComplByType(type, arg, pat, additional_regex)
+fun! vim_addon_ocaml#ComplByType(type, arg, pat, additional_regex, parenthesis)
   " let g:cmds = []
   for mli in vim_addon_ocaml#MLIFiles()
     let pat = a:pat == '' ? '.*' : a:pat
+    let type = substitute(a:type, '->','\\s*->\\s*','g')
+
     let file = vim_addon_ocaml#ParseMLICached(mli)
     for val in file['vals']
       if  (a:pat == '' || val['name'] =~ '^'.a:pat || (a:additional_regex != "" && val['name'] =~ a:additional_regex))
-      \ && (a:type == '' || val['args'] =~ a:type)
+      \ && (type == '' || val['type'] =~ type)
         call complete_add({
-              \  'word': '('.val['name'].' '.a:arg.')'
+              \  'word': a:parenthesis ? '('.val['name'].' '.a:arg.')' : val['name']
               \ ,'menu': val['args'].'->'.val['return_type'].' '.fnamemodify(mli, ':t')
               \ ,'dup':1
               \ } )
@@ -176,7 +178,7 @@ fun! vim_addon_ocaml#FilesOfTagFileCached(file)
   return cached_file_contents#CachedFileContents(a:file, s:ScanTagFile)
 endf
 
-let s:ScanMLI =  {'func': funcref#Function('vim_addon_ocaml#ParseMLI'), 'version' : 2, 'use_file_cache' :1}
+let s:ScanMLI =  {'func': funcref#Function('vim_addon_ocaml#ParseMLI'), 'version' : 4, 'use_file_cache' :1}
 fun! vim_addon_ocaml#ParseMLI(filename)
   let pat='.*'
   let cmd = "sed -n '".'s/^\(external\|val\)[ \t]\+\('.pat.'[ \t]*:[ \t]*.*\)/\2/p'."' ".shellescape(a:filename)
@@ -195,6 +197,7 @@ fun! vim_addon_ocaml#ParseMLI(filename)
         \ 'args' : substitute(name_type[2],'\s*$','',''),
         \ 'return_type' :  name_type[3]
         \ }
+      let val['type'] = val['args'].' -> '.val['return_type']
       call add(vals, val)
     endif
   endfor
@@ -223,4 +226,25 @@ fun! vim_addon_ocaml#MLIFiles()
     endif
   endfor
   return mlis
+endf
+
+fun! vim_addon_ocaml#FunctionByType()
+  let typeRegex = input('typeRegex :')
+
+  let list = []
+
+  for mli in vim_addon_ocaml#MLIFiles()
+    let file = vim_addon_ocaml#ParseMLICached(mli)
+    for val in file['vals']
+      if val['line'] =~ typeRegex
+        call add(list,  val['line'].' | '.mli)
+      endif
+    endfor
+    if complete_check() != 0 | return | endif
+  endfor
+
+  let selection =  tlib#input#List("s","select func", list)
+
+  echoe "TODO jumpt o location"
+
 endf

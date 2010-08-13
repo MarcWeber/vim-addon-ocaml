@@ -15,3 +15,5 @@ call vim_addon_completion#RegisterCompletionFunc({
       \ 'scope' : 'ocaml',
       \ 'func': 'vim_addon_ocaml#OcamlComplete'
       \ })
+
+command -nargs=0 MLFunctionByTye call vim_addon_ocaml#FunctionByType()
