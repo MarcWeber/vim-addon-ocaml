@@ -1,0 +1,49 @@
+ctags patch:
+
+===================================================================
+--- ctags-work/read.c	(revision 763)
++++ ctags-work/read.c	(working copy)
+@@ -554,8 +554,11 @@
+ 	if (pSeekValue != NULL)
+ 		*pSeekValue = ftell (File.fp);
+ 	result = readLine (vLine, File.fp);
++    // ocaml parser adds the module name (which is the filename)
++    // if the file is empty result is NULL.
++    // put anything into the tag file (it won't be found anyway..), continue parsing
+ 	if (result == NULL)
+-		error (FATAL, "Unexpected end of file: %s", vStringValue (File.name));
++		result = "EOF-no-location";
+ 	fsetpos (File.fp, &orignalPosition);
+ 
+ 	return result;
+Index: ctags-work/ocaml.c
+===================================================================
+--- ctags-work/ocaml.c	(revision 763)
++++ ctags-work/ocaml.c	(working copy)
+@@ -314,6 +314,11 @@
+ 		else
+ 			lastIsStar = '*' == *c;
+ 
++                // can be null afte c = st->cp
++                // happens when lexing this document:
++                // "(*)(*)" (contained in help.ml in ocaml distribution)
++                // the real fix would be : lex strings, ignore comments in them
++                if (c != NULL)
+ 		c++;
+ 	}
+ 
+@@ -1572,6 +1577,14 @@
+ 	{
+ 	case OcaKEYWORD_and:
+ 		cleanupPreviousParser ();
++                if (previousParser == NULL) {
++                  // don't know what' I'm doing here. Preventing segfault on this line:
++                  // "string;"
++                  // found in this line
++                  // exception Error of string and string;
++                  // found in DynLoader.ml of ocaml distribution
++                  toDoNext = &globalScope;
++        	} else
+ 		toDoNext = previousParser;
+ 		break;
+ 

@@ -53,6 +53,12 @@ TIPS:
 
   --regex-ocaml=/^[ \t]*external[ \t]+([A-Za-z0-9_]+)/\1/c,v/
 
+  (verify that ctags --list-maps has an ocaml entry. If it doesn't upgrade
+  exuberant ctags)
+  
+  If you want to tag ocaml sources you have to apply ctags.patch preventing some segfaults
+
+
 HapPy vimming!
 
 
