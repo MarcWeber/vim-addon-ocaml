@@ -51,6 +51,7 @@ fun! vim_addon_ocaml#OcamlComplete(findstart, base)
     let additional_regex = get(patterns, 'vim_regex', "")
 
     let matches = []
+    let s:dot_compl = split(a:base,'\.',1)
     let s:comma_compl = split(a:base,",",1)
     let s:type_compl = split(a:base,":",1)
 
@@ -75,6 +76,11 @@ fun! vim_addon_ocaml#OcamlComplete(findstart, base)
       " find all val lines in .mli files which take that argument
     elseif len(s:type_compl) == 2
       call vim_addon_ocaml#ComplByType(s:type_compl[1], "arg", s:type_compl[0], additional_regex, 0)
+
+
+    elseif len(s:dot_compl) == 2
+      call vim_addon_ocaml#ComplByName(s:dot_compl[1], additional_regex, {'mli_and_prefix': s:dot_compl[0]} )
+
     else
       " B) completion (names only)
       " add all vars in this buf
@@ -141,15 +147,28 @@ fun! vim_addon_ocaml#ComplByType(type, arg, pat, additional_regex, parenthesis)
 
 endf
 
-fun! vim_addon_ocaml#ComplByName(pat, additional_regex)
+fun! vim_addon_ocaml#ComplByName(pat, additional_regex, ...)
+  let opts = a:0 > 0 ? a:1 : {}
+  " if option is set String. completion is used
+  " so only complete with string.mli and append String. to the completion
+  " string (this can be done smarter - who cares ?
+  let mli_and_prefix = get(opts, 'mli_and_prefix', '')
+  let mli_and_prefix_lower = tolower(mli_and_prefix)
+  let prefix = mli_and_prefix == '' ? '' :  mli_and_prefix.'.'
+
   for mli in vim_addon_ocaml#MLIFiles()
+    let mli_tail = fnamemodify(mli, ':t')
+    if mli_and_prefix != '' && tolower(mli_tail) != mli_and_prefix_lower.'.mli'
+      continue
+    endif
+
     let pat = a:pat == '' ? '.*' : a:pat
     let file = vim_addon_ocaml#ParseMLICached(mli)
     for val in file['vals']
       if val['name'] =~ '^'.a:pat || a:pat == '' || (a:additional_regex != "" && val['name'] =~ a:additional_regex)
         call complete_add({
-              \  'word': val['name']
-              \ ,'menu': val['args'].'->'.val['return_type'].' '.fnamemodify(mli, ':t')
+              \  'word': prefix.val['name']
+              \ ,'menu': val['args'].'->'.val['return_type'].' '.mli_tail
               \ ,'dup':1
               \ } )
       endif
