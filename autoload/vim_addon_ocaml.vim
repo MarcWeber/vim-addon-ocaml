@@ -276,3 +276,40 @@ fun! vim_addon_ocaml#FunctionByType()
   echoe "TODO jumpt o location"
 
 endf
+
+" experimental
+fun! vim_addon_ocaml#GotoThingHandler()
+  let r = []
+  let thing = expand('<cword>')
+  " try to find type
+  let t = vim_addon_ocaml#TypeAtCursor()
+  if t != ""
+    call extend(r, vim_addon_ocaml#GotoThingHandlerItems(t, 'type') )
+  endif
+
+  " name
+  for t in [expand('<cWORD>'), thing]
+    call extend(r, vim_addon_ocaml#GotoThingHandlerItems(t, 'name') )
+  endfor
+  return r
+" a afile path:  "filename.file"
+" a dict: { 'break': 1, 'filename' : file [, 'line_nr' line nr ] [, 'info' : 'shown before filename'] }
+endf
+
+" goto thing at cursor implementation {{{
+fun! vim_addon_ocaml#GotoThingHandlerItems(thing, prefix)
+  let r = []
+  let split = split(a:thing, '\.')
+  if len(split) == 2
+    for m in taglist('^'.split[1])
+      let basename = fnamemodify(m.filename, ':t')
+      " module match and name match: high priority:
+      let break = tolower(basename) == tolower(split[0]).'.mli'
+      call add(r, { 'break': break, 'filename' : m.filename, 'line_nr': m.cmd, 'info' : a:prefix } )
+    endfor
+  endif
+  return r
+endf
+"}}}
+"
+"on_thing_handler#HandleOnThing()
