@@ -301,12 +301,27 @@ fun! vim_addon_ocaml#GotoThingHandlerItems(thing, prefix)
   let r = []
   let split = split(a:thing, '\.')
   if len(split) == 2
-    for m in taglist('^'.split[1])
+    for m in taglist('^'.split[1].'$')
       let basename = fnamemodify(m.filename, ':t')
       " module match and name match: high priority:
-      let break = tolower(basename) == tolower(split[0]).'.mli'
+      let break = basename =~? split[0].'.ml[i]\?$'
       call add(r, { 'break': break, 'filename' : m.filename, 'line_nr': m.cmd, 'info' : a:prefix } )
     endfor
+
+    if a:prefix == 'name'
+      " try to find let xxx = definitions in local .ml files
+      " they are not included in tag files
+      " adding a regexp to tags would do - however this probably only makes
+      " sense for the current project - coding it in VimL for that reason
+      for f in split(glob('**/'.tolower(split[0]).'.ml'),"\n")
+        let lines = readfile(f)
+        for l in range(0, len(lines) -1)
+          if lines[l] =~ 'let\s\+'.split[1].'\>'
+            call add(r, { 'break': 1, 'filename': f, 'line_nr': '/'.escape(lines[l],'/\%&').'/', 'info': 'maybe local thing ?'})
+          endif
+        endfor
+      endfor
+    endif
   endif
   return r
 endf

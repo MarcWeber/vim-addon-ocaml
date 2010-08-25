@@ -45,6 +45,17 @@ For both b) and c) the completion result is
 
 Its not perfect - but its a starting point.
 
+
+goto feature:
+====================
+
+press gf on a thing to make Vim try to find the definition. These locations are considered:
+- by tags
+- by tag (and matching module name. Eg String.concat)
+- lets in other **/MODULE.ml files whith matching module name
+- type definition (experimental)
+
+
 TIPS:
 ====================
 
