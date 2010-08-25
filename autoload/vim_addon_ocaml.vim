@@ -320,7 +320,7 @@ fun! vim_addon_ocaml#GotoThingHandlerItems(thing, prefix)
       for f in split(glob('**/'.tolower(split[0]).'.ml'),"\n")
         let lines = readfile(f)
         for l in range(0, len(lines) -1)
-          if lines[l] =~ 'let\s\+'.split[1].'\>'
+          if lines[l] =~ 'let\%(\s\+rec\)\s\+'.split[1].'\>'
             call add(r, { 'break': 1, 'filename': f, 'line_nr': '/'.escape(lines[l],'/\%&').'/', 'info': 'maybe local thing ?'})
           endif
         endfor
