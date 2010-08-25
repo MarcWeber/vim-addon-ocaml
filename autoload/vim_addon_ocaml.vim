@@ -300,6 +300,10 @@ endf
 fun! vim_addon_ocaml#GotoThingHandlerItems(thing, prefix)
   let r = []
   let split = split(a:thing, '\.')
+  if len(split) > 2
+    " ExtString.String.nsplit -> [ExtString, nsplit]
+    let split = [split[0], split[-1]]
+  endif
   if len(split) == 2
     for m in taglist('^'.split[1].'$')
       let basename = fnamemodify(m.filename, ':t')
