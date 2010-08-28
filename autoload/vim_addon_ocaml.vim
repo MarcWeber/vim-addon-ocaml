@@ -41,11 +41,9 @@ fun! vim_addon_ocaml#OcamlComplete(findstart, base)
   if a:findstart
     let [bc,ac] = vim_addon_ocaml#BcAc()
     let s:match_text = matchstr(bc, '\zs[^()[\]{}\t ]*$')
-    let s:start = len(bc)-len(matchstr(bc,'\S*$'))
+    let s:start = len(bc)-len(s:match_text)
     return s:start
   else
-
-
     let patterns = vim_addon_completion#AdditionalCompletionMatchPatterns(a:base
         \ , "ocaml_completion", { 'match_beginning_of_string': 1})
     let additional_regex = get(patterns, 'vim_regex', "")
