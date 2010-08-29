@@ -297,36 +297,45 @@ endf
 " goto thing at cursor implementation {{{
 fun! vim_addon_ocaml#GotoThingHandlerItems(thing, prefix)
   let r = []
-  let split = split(a:thing, '\.')
-  if len(split) > 2
+  let split_ = split(a:thing, '\.')
+  if len(split_) > 2
     " ExtString.String.nsplit -> [ExtString, nsplit]
-    let split = [split[0], split[-1]]
+    let split_ = [split_[0], split_[-1]]
   endif
-  if len(split) == 2
-    for m in taglist('^'.split[1].'$')
+  if len(split_) == 2
+    for m in taglist('^'.split_[1].'$')
       let basename = fnamemodify(m.filename, ':t')
       " module match and name match: high priority:
-      let break = basename =~? split[0].'.ml[i]\?$'
-      call add(r, { 'break': break, 'filename' : m.filename, 'line_nr': m.cmd, 'info' : a:prefix } )
+      let top = basename =~? split_[0].'.ml[i]\?$'
+      call add(r, { 'top': top, 'filename' : m.filename, 'line_nr': m.cmd, 'info' : a:prefix } )
     endfor
 
     if a:prefix == 'name'
-      " try to find let xxx = definitions in local .ml files
-      " they are not included in tag files
-      " adding a regexp to tags would do - however this probably only makes
-      " sense for the current project - coding it in VimL for that reason
-      for f in split(glob('**/'.tolower(split[0]).'.ml'),"\n")
-        let lines = readfile(f)
-        for l in range(0, len(lines) -1)
-          if lines[l] =~ 'let\%(\s\+rec\)\s\+'.split[1].'\>'
-            call add(r, { 'break': 1, 'filename': f, 'line_nr': '/'.escape(lines[l],'/\%&').'/', 'info': 'maybe local thing ?'})
-          endif
-        endfor
-      endfor
+      call  vim_addon_ocaml#FindInLocalMls(tolower(split_[0]), split_[1], r)
+    endif
+  else
+    if a:prefix == 'name'
+      call vim_addon_ocaml#FindInLocalMls('*', split_[0], r)
     endif
   endif
   return r
 endf
+
+fun! vim_addon_ocaml#FindInLocalMls(file, thing, r)
+  " try to find let xxx = definitions in local .ml files
+  " they are not included in tag files
+  " adding a regexp to tags would do - however this probably only makes
+  " sense for the current project - coding it in VimL for that reason
+  for f in split(glob('**/'.a:file.'.ml'),"\n")
+    let lines = readfile(f)
+    for l in range(0, len(lines) -1)
+      if lines[l] =~ 'let\%(\s\+rec\)\?\s\+'.a:thing.'\>'
+        call add(a:r, { 'top': 1, 'break': 0, 'filename': f, 'line_nr': '/'.escape(lines[l],'/\%&').'/', 'info': 'let in **/*.ml'})
+      endif
+    endfor
+  endfor
+endf
+
 "}}}
 "
 "on_thing_handler#HandleOnThing()
