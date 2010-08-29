@@ -19,3 +19,8 @@ e emacs + ocaml-mode (core Caml)
 
 http://caml.inria.fr/cgi-bin/hump.en.cgi?contrib=105 taggae ?
 create tag files for vim? How does it compare with ctags?
+
+
+additional useful ctag rules (you can put them into ~/.ctags)
+--regex-ocaml=/^[ \t]*external[ \t]+([A-Za-z0-9_]+)/\1/c,v/
+--regex-ocaml=/^[ \t]*let[ \t]+(rec[\ t]+)?([A-Za-z0-9_]+)/\2/l,local_let/
