@@ -11,6 +11,11 @@ TODO ?
 http://jun.furuse.info/hacks/ocamlspotter/
 
 
+INSTALLATION:
+==============
+use github.com/MarcWeber/vim-addon-manager
+
+
 Emacs tools:
 ============== 
 e emacs + ocaml-mode (core Caml) 
