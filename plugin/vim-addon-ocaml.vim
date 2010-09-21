@@ -18,6 +18,14 @@ call vim_addon_completion#RegisterCompletionFunc({
       \ 'func': 'vim_addon_ocaml#OcamlComplete'
       \ })
 
+call vim_addon_completion#RegisterCompletionFunc({
+      \ 'description' : 'module name completion only',
+      \ 'completeopt' : 'preview,menu,menuone',
+      \ 'scope' : 'ocaml',
+      \ 'func': 'vim_addon_ocaml#OcamlComplete'
+      \ })
+
+
 command! -nargs=0 MLFunctionByTye call vim_addon_ocaml#FunctionByType()
 
 " ocaml can't cope with UTF-8 (yet?)
