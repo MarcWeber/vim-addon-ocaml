@@ -34,6 +34,6 @@ augroup SET_ENCODING_FOR_OCAML_FILES
 augroup end
 
 
-exec scriptmanager#DefineAndBind('s:l','g:vim_addon_toggle_buffer','{}')
+exec vam#DefineAndBind('s:l','g:vim_addon_toggle_buffer','{}')
 let s:l['ocaml_ml'] = funcref#Function('return vim_addon_toggle#Substitute('.string('\.ml').','.string('.mli').')')
 let s:l['ocaml_mli'] = funcref#Function('return vim_addon_toggle#Substitute('.string('\.mli').','.string('.ml').')')

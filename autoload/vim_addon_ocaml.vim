@@ -1,7 +1,7 @@
 
 let s:dir = expand('<sfile>',':h:h')
 
-exec scriptmanager#DefineAndBind('s:c','g:vim_addon_ocaml','{}')
+exec vam#DefineAndBind('s:c','g:vim_addon_ocaml','{}')
 
 if !exists('g:vim_ocaml_ctags_command_recursive')
   let g:vim_ocaml_ctags_command_recursive = 'ctags -R'
