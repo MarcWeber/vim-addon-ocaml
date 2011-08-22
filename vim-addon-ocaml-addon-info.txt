@@ -11,7 +11,7 @@
     "vim-addon-actions": {},
     "vim-addon-background-cmd": {},
     "vim-addon-goto-thing-at-cursor": {},
-    "vim-addon-toggle-buffer": {},
+    "vim-addon-toggle-buffer": {}
   },
   "description" : "collection of ocaml related stuff I was pointed to - and some own code"
 }
