@@ -30,7 +30,7 @@ command! -nargs=0 MLFunctionByTye call vim_addon_ocaml#FunctionByType()
 
 " ocaml can't cope with UTF-8 (yet?)
 augroup SET_ENCODING_FOR_OCAML_FILES
-  autocmd BufReadPre,BufNewFile *.ml,*.mli setlocal encoding=latin1 | setlocal fileencoding=latin1
+  autocmd BufReadPre,BufNewFile *.ml,*.mli setlocal fileencoding=latin1
 augroup end
 
 
