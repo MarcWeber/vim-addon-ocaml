@@ -63,7 +63,17 @@ TIPS:
 
 * consider putting this into your ~/.ctags file
 
+  --langmap=OCaml:.sml,OCaml:.ml
   --regex-ocaml=/^[ \t]*external[ \t]+([A-Za-z0-9_]+)/\1/c,v/
+  --regex-OCaml=/^[ \t]*datatype[ \t]+([A-Z'a-z0-9_]+)/\1/d,datatype/
+  --regex-OCaml=/^[ \t]*and[ \t]+([A-Z'a-z0-9_]+)/\1/d,datatype/
+  --regex-OCaml=/^[ \t]*withtype[ \t]+([A-Z'a-z0-9_]+)/\1/w,withtype/
+  --regex-OCaml=/^[ \t]*structure[ \t]+([A-Z'a-z0-9_]+)/\1/s,structure/
+  --regex-OCaml=/[ \t]*val[ \t]+([A-Z'a-z0-9_]+)/\1/v,val/
+  --regex-OCaml=/^[ \t]*fun[ \t]+([A-Z'a-z0-9_]+)/\1/f,fun/
+  --regex-OCaml=/^[ \t]*type[ \t]+([A-Z'a-z0-9_]+)/\1/t,type/
+  --regex-OCaml=/\|[ \t]*([A-Z'a-z0-9_]+)[^-]*$/\1/c,cons/
+
 
   (verify that ctags --list-maps has an ocaml entry. If it doesn't upgrade
   exuberant ctags)
