@@ -18,10 +18,10 @@ let s:c.complete_lhs_various = get(s:c, 'complete_lhs_various', '<c-x><c-v>')
 let s:c.complete_lhs_module_name = get(s:c, 'complete_lhs_module_name', '<c-x><c-m>')
 
 " .ml ocaml completion based on various strategies
-exec 'inoremap <silent><exec> '.s:c.complete_lhs_various
+exec 'inoremap <silent><expr> '.s:c.complete_lhs_various
       \ .' vim_addon_completion#CompleteUsing("vim_addon_ocaml#OcamlComplete","preview,menu,menuone")'
 
-exec 'inoremap <silent><exec> '.s:c.complete_lhs_module_name
+exec 'inoremap <silent><expr> '.s:c.complete_lhs_module_name
       \ .' vim_addon_completion#CompleteUsing("vim_addon_ocaml#OcamlComplete","preview,menu,menuone")'
 
 command! -nargs=0 MLFunctionByTye call vim_addon_ocaml#FunctionByType()
