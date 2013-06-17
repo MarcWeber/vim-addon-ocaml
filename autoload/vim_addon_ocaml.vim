@@ -339,3 +339,41 @@ endf
 "}}}
 "
 "on_thing_handler#HandleOnThing()
+
+
+function vim_addon_ocaml#OMLetFoldLevel(l)
+
+  " This is for not merging blank lines around folds to them
+  if getline(a:l) !~ '\S'
+    return -1
+  endif
+
+  " We start folds for modules, classes, and every toplevel definition
+  if getline(a:l) =~ '^\s*\%(\<val\>\|\<module\>\|\<class\>\|\<type\>\|\<method\>\|\<initializer\>\|\<inherit\>\|\<exception\>\|\<external\>\)'
+    exe 'return ">' (indent(a:l)/s:i)+1 '"'
+  endif
+
+  " Toplevel let are detected thanks to the indentation
+  if getline(a:l) =~ '^\s*let\>' && indent(a:l) == s:i+s:topindent(a:l)
+    exe 'return ">' (indent(a:l)/s:i)+1 '"'
+  endif
+
+  " We close fold on end which are associated to struct, sig or object.
+  " We use syntax information to do that.
+  if getline(a:l) =~ '^\s*end\>' && synIDattr(synID(a:l, indent(a:l)+1, 0), "name") != "ocamlKeyword"
+    return (indent(a:l)/s:i)+1
+  endif
+
+  " Folds end on ;;
+  if getline(a:l) =~ '^\s*;;'
+    exe 'return "<' (indent(a:l)/s:i)+1 '"'
+  endif
+
+  " Comments around folds aren't merged to them.
+  if synIDattr(synID(a:l, indent(a:l)+1, 0), "name") == "ocamlComment"
+    return -1
+  endif
+
+  return '='
+endfunction
+

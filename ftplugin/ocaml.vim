@@ -12,14 +12,28 @@
 "                            (MM for <ygrek@autistici.org>)
 "              2006 May 01 - Added .annot support for file.whateverext (SZ)
 "
-if exists("b:did_ftplugin")
-  finish
-endif
-let b:did_ftplugin=1
+"              2013 Jun 16   Made loading python lazy, adding efm trace line
+"                            move python code into its own file
+"                            always provide mappings, even if python is not
+"                            supported (will show error when its used)
+"                            moving vim_addon_ocaml#OMLetFoldLevel into
+"                            autoload/vim_addon_ocaml.vim - drop some finish
+"                            guards.
+"
+"                            Rewrite some mappings I care about using s:c lhs
+"                            configuration
+
+if !exists('g:addon_ocaml') | let g:addon_ocaml = {} | endif | let s:c = g:addon_ocaml
+
+let s:c.map_print_type = get(s:c, 'map_print_type', '\t')
+let s:c.map_goto = get(s:c, 'map_goto', '\d')
+
 
 " Error handling -- helps moving where the compiler wants you to go
 let s:cposet=&cpoptions
 set cpo-=C
+
+" Called from .. line is for ocaml traces
 setlocal efm=
       \%EFile\ \"%f\"\\,\ line\ %l\\,\ characters\ %c-%*\\d:,
       \%EFile\ \"%f\"\\,\ line\ %l\\,\ character\ %c:%m,
@@ -32,7 +46,8 @@ setlocal efm=
       \%X%*\\a[%*\\d]:\ Leaving\ directory\ `%f',
       \%D%*\\a:\ Entering\ directory\ `%f',
       \%X%*\\a:\ Leaving\ directory\ `%f',
-      \%DMaking\ %*\\a\ in\ %f
+      \%DMaking\ %*\\a\ in\ %f,
+      \Called\ from\ file\ \\\"%f\\\"\\,\ line\ %l\\,\ characters\ %c-%m
 
 " Add mappings, unless the user didn't want this.
 if !exists("no_plugin_maps") && !exists("no_ocaml_maps")
@@ -124,16 +139,12 @@ endif
 " Set the folding method
 if exists("g:ocaml_folding")
   setlocal foldmethod=expr
-  setlocal foldexpr=OMLetFoldLevel(v:lnum)
+  setlocal foldexpr=vim_addon_ocaml#OMLetFoldLevel(v:lnum)
 endif
 
 " - Only definitions below, executed once -------------------------------------
 
-if exists("*OMLetFoldLevel")
-  finish
-endif
-
-function s:topindent(lnum)
+function! s:topindent(lnum)
   let l = a:lnum
   while l > 0
     if getline(l) =~ '\s*\%(\<struct\>\|\<sig\>\|\<object\>\)'
@@ -144,41 +155,7 @@ function s:topindent(lnum)
   return -s:i
 endfunction
 
-function OMLetFoldLevel(l)
-
-  " This is for not merging blank lines around folds to them
-  if getline(a:l) !~ '\S'
-    return -1
-  endif
-
-  " We start folds for modules, classes, and every toplevel definition
-  if getline(a:l) =~ '^\s*\%(\<val\>\|\<module\>\|\<class\>\|\<type\>\|\<method\>\|\<initializer\>\|\<inherit\>\|\<exception\>\|\<external\>\)'
-    exe 'return ">' (indent(a:l)/s:i)+1 '"'
-  endif
-
-  " Toplevel let are detected thanks to the indentation
-  if getline(a:l) =~ '^\s*let\>' && indent(a:l) == s:i+s:topindent(a:l)
-    exe 'return ">' (indent(a:l)/s:i)+1 '"'
-  endif
-
-  " We close fold on end which are associated to struct, sig or object.
-  " We use syntax information to do that.
-  if getline(a:l) =~ '^\s*end\>' && synIDattr(synID(a:l, indent(a:l)+1, 0), "name") != "ocamlKeyword"
-    return (indent(a:l)/s:i)+1
-  endif
-
-  " Folds end on ;;
-  if getline(a:l) =~ '^\s*;;'
-    exe 'return "<' (indent(a:l)/s:i)+1 '"'
-  endif
-
-  " Comments around folds aren't merged to them.
-  if synIDattr(synID(a:l, indent(a:l)+1, 0), "name") == "ocamlComment"
-    return -1
-  endif
-
-  return '='
-endfunction
+" .annot file support {{{1
 
 " Vim support for OCaml .annot files (requires Vim with python support)
 "
@@ -200,7 +177,8 @@ endfunction
 "
 " Created:        Wed, 01 Oct 2003 18:16:22 +0200 zack
 " LastModified:   Wed, 25 Aug 2004 18:28:39 +0200 zack
-
+" LastModified:   June 2013 Marc Weber (moving py code into autoload/python-code.py)
+"
 " '<LocalLeader>d' will find the definition of the name under the cursor
 " and position cursor on it (only for current file) or print fully qualified name
 " (for external definitions). (ocaml >= 3.11)
@@ -211,292 +189,47 @@ endfunction
 "
 " Copyright (C) 2009 <ygrek@autistici.org>
 
-if !has("python")
-  finish
-endif
-
-python << EOF
-
-import re
-import os
-import os.path
-import string
-import time
-import vim
-
-debug = False
-
-class AnnExc(Exception):
-    def __init__(self, reason):
-        self.reason = reason
-
-no_annotations = AnnExc("No annotations (.annot) file found")
-annotation_not_found = AnnExc("No type annotation found for the given text")
-definition_not_found = AnnExc("No definition found for the given text")
-def malformed_annotations(lineno, reason):
-    return AnnExc("Malformed .annot file (line = %d, reason = %s)" % (lineno,reason))
-
-class Annotations:
-    """
-      .annot ocaml file representation
-
-      File format (copied verbatim from caml-types.el)
-
-      file ::= block *
-      block ::= position <SP> position <LF> annotation *
-      position ::= filename <SP> num <SP> num <SP> num
-      annotation ::= keyword open-paren <LF> <SP> <SP> data <LF> close-paren
-
-      <SP> is a space character (ASCII 0x20)
-      <LF> is a line-feed character (ASCII 0x0A)
-      num is a sequence of decimal digits
-      filename is a string with the lexical conventions of O'Caml
-      open-paren is an open parenthesis (ASCII 0x28)
-      close-paren is a closed parenthesis (ASCII 0x29)
-      data is any sequence of characters where <LF> is always followed by
-           at least two space characters.
-
-      - in each block, the two positions are respectively the start and the
-        end of the range described by the block.
-      - in a position, the filename is the name of the file, the first num
-        is the line number, the second num is the offset of the beginning
-        of the line, the third num is the offset of the position itself.
-      - the char number within the line is the difference between the third
-        and second nums.
-
-      Possible keywords are \"type\", \"ident\" and \"call\".
-    """
-
-    def __init__(self):
-        self.__filename = None  # last .annot parsed file
-        self.__ml_filename = None # as above but s/.annot/.ml/
-        self.__timestamp = None # last parse action timestamp
-        self.__annot = {}
-        self.__refs = {}
-        self.__calls = {}
-        self.__re = re.compile(
-          '^"[^"]*"\s+(\d+)\s+(\d+)\s+(\d+)\s+"[^"]*"\s+(\d+)\s+(\d+)\s+(\d+)$')
-        self.__re_int_ref = re.compile('^int_ref\s+(\w+)\s"[^"]*"\s+(\d+)\s+(\d+)\s+(\d+)')
-        self.__re_def_full = re.compile(
-          '^def\s+(\w+)\s+"[^"]*"\s+(\d+)\s+(\d+)\s+(\d+)\s+"[^"]*"\s+(\d+)\s+(\d+)\s+(\d+)$')
-        self.__re_def = re.compile('^def\s+(\w+)\s"[^"]*"\s+(\d+)\s+(\d+)\s+(\d+)\s+')
-        self.__re_ext_ref = re.compile('^ext_ref\s+(\S+)')
-        self.__re_kw = re.compile('^(\w+)\($')
-
-    def __parse(self, fname):
-        try:
-            f = open(fname)
-            self.__annot = {} # erase internal mappings when file is reparsed
-            self.__refs = {}
-            self.__calls = {}
-            line = f.readline() # position line
-            lineno = 1
-            while (line != ""):
-                m = self.__re.search(line)
-                if (not m):
-                    raise malformed_annotations(lineno,"re doesn't match")
-                line1 = int(m.group(1))
-                col1 = int(m.group(3)) - int(m.group(2))
-                line2 = int(m.group(4))
-                col2 = int(m.group(6)) - int(m.group(5))
-                while 1:
-                    line = f.readline() # keyword or position line
-                    lineno += 1
-                    m = self.__re_kw.search(line)
-                    if (not m):
-                        break
-                    desc = []
-                    line = f.readline() # description
-                    lineno += 1
-                    if (line == ""): raise malformed_annotations(lineno,"no content")
-                    while line != ")\n":
-                        desc.append(string.strip(line))
-                        line = f.readline()
-                        lineno += 1
-                        if (line == ""): raise malformed_annotations(lineno,"bad content")
-                    desc = string.join(desc, "\n")
-                    key = ((line1, col1), (line2, col2))
-                    if (m.group(1) == "type"):
-                        if not self.__annot.has_key(key):
-                            self.__annot[key] = desc
-                    if (m.group(1) == "call"): # region, accessible only in visual mode
-                        if not self.__calls.has_key(key):
-                            self.__calls[key] = desc
-                    if (m.group(1) == "ident"):
-                        m = self.__re_int_ref.search(desc)
-                        if m:
-                          line = int(m.group(2))
-                          col = int(m.group(4)) - int(m.group(3))
-                          name = m.group(1)
-                        else:
-                          line = -1
-                          col = -1
-                          m = self.__re_ext_ref.search(desc)
-                          if m:
-                            name = m.group(1)
-                          else:
-                            line = -2
-                            col = -2
-                            name = desc
-                        if not self.__refs.has_key(key):
-                          self.__refs[key] = (line,col,name)
-            f.close()
-            self.__filename = fname
-            self.__ml_filename = vim.current.buffer.name
-            self.__timestamp = int(time.time())
-        except IOError:
-            raise no_annotations
-
-    def parse(self):
-        try:
-            annot_file = os.path.splitext(vim.current.buffer.name)[0] + ".annot"
-            self.__parse(annot_file)
-        except:
-            (head,tail) = os.path.split(annot_file)
-            annot_file = os.path.join(head, "_build/", tail)
-            self.__parse(annot_file)
-
-    def check_file(self):
-        if vim.current.buffer.name == None:
-            raise no_annotations
-        if vim.current.buffer.name != self.__ml_filename or  \
-          os.stat(self.__filename).st_mtime > self.__timestamp:
-            self.parse()
-
-    def get_type(self, (line1, col1), (line2, col2)):
-        if debug:
-            print line1, col1, line2, col2
-        self.check_file()
-        try:
-            try:
-              extra = self.__calls[(line1, col1), (line2, col2)]
-              if extra == "tail":
-                extra = " (* tail call *)"
-              else:
-                extra = " (* function call *)"
-            except KeyError:
-              extra = ""
-            return self.__annot[(line1, col1), (line2, col2)] + extra
-        except KeyError:
-            raise annotation_not_found
-
-    def get_ident(self, (line1, col1), (line2, col2)):
-        if debug:
-            print line1, col1, line2, col2
-        self.check_file()
-        try:
-            (line,col,name) = self.__refs[(line1, col1), (line2, col2)]
-            if line >= 0 and col >= 0:
-              vim.command("normal "+str(line)+"gg"+str(col+1)+"|")
-              #current.window.cursor = (line,col)
-            if line == -2:
-              m = self.__re_def_full.search(name)
-              if m:
-                l2 = int(m.group(5))
-                c2 = int(m.group(7)) - int(m.group(6))
-                name = m.group(1)
-              else:
-                m = self.__re_def.search(name)
-                if m:
-                  l2 = int(m.group(2))
-                  c2 = int(m.group(4)) - int(m.group(3))
-                  name = m.group(1)
-                else:
-                  l2 = -1
-              if False and l2 >= 0:
-                # select region
-                if c2 == 0 and l2 > 0:
-                  vim.command("normal v"+str(l2-1)+"gg"+"$")
-                else:
-                  vim.command("normal v"+str(l2)+"gg"+str(c2)+"|")
-            return name
-        except KeyError:
-            raise definition_not_found
-
-word_char_RE = re.compile("^[\w.]$")
-
-  # TODO this function should recognize ocaml literals, actually it's just an
-  # hack that recognize continuous sequences of word_char_RE above
-def findBoundaries(line, col):
-    """ given a cursor position (as returned by vim.current.window.cursor)
-    return two integers identify the beggining and end column of the word at
-    cursor position, if any. If no word is at the cursor position return the
-    column cursor position twice """
-    left, right = col, col
-    line = line - 1 # mismatch vim/python line indexes
-    (begin_col, end_col) = (0, len(vim.current.buffer[line]) - 1)
-    try:
-        while word_char_RE.search(vim.current.buffer[line][left - 1]):
-            left = left - 1
-    except IndexError:
-        pass
-    try:
-        while word_char_RE.search(vim.current.buffer[line][right + 1]):
-            right = right + 1
-    except IndexError:
-        pass
-    return (left, right)
-
-annot = Annotations() # global annotation object
-
-def get_marks(mode):
-    if mode == "visual":  # visual mode: lookup highlighted text
-        (line1, col1) = vim.current.buffer.mark("<")
-        (line2, col2) = vim.current.buffer.mark(">")
-    else: # any other mode: lookup word at cursor position
-        (line, col) = vim.current.window.cursor
-        (col1, col2) = findBoundaries(line, col)
-        (line1, line2) = (line, line)
-    begin_mark = (line1, col1)
-    end_mark = (line2, col2 + 1)
-    return (begin_mark,end_mark)
-
-def printOCamlType(mode):
-    try:
-        (begin_mark,end_mark) = get_marks(mode)
-        print annot.get_type(begin_mark, end_mark)
-    except AnnExc, exc:
-        print exc.reason
-
-def gotoOCamlDefinition(mode):
-    try:
-        (begin_mark,end_mark) = get_marks(mode)
-        print annot.get_ident(begin_mark, end_mark)
-    except AnnExc, exc:
-        print exc.reason
-
-def parseOCamlAnnot():
-    try:
-        annot.parse()
-    except AnnExc, exc:
-        print exc.reason
-
-EOF
-
-fun! OCamlPrintType(current_mode)
-  if (a:current_mode == "visual")
-    python printOCamlType("visual")
-  else
-    python printOCamlType("normal")
+" Its important to be lazy for speed reasons. On Windows the by .dll is load
+" lazily. Thus only initialize if the user acutally wants to use Snipmate
+let s:plugin_root = expand('<sfile>:h:h')
+fun! s:c.Py(command)
+  if !has_key(s:c, 'PyCommand')
+    if !has_key(s:c, 'PyCommand')
+      try
+        " try python3
+        py3 import vim; vim.command('let g:addon_ocaml.PyCommand = "py3 "')
+      catch /.*/ 
+        try
+          " try python2
+          py import vim; vim.command('let g:addon_ocaml.PyCommand = "py "')
+        catch /.*/ | endtry
+      endtry
+    endif
   endif
-endfun
 
-fun! OCamlGotoDefinition(current_mode)
-  if (a:current_mode == "visual")
-    python gotoOCamlDefinition("visual")
-  else
-    python gotoOCamlDefinition("normal")
+  if !has_key(s:c, 'PyCommand') | throw "no working python found" | endif
+
+  " load py code:
+  if !has_key(s:c, 'did_python_setup')
+    exec 'pyfile '.fnameescape(s:plugin_root.'/autoload/python-code.py')
+    let s:c.did_python_setup = 1
   endif
-endfun
+
+  " run the python command
+  exec s:c.PyCommand.a:command
+endf
+
 
 fun! OCamlParseAnnot()
-  python parseOCamlAnnot()
+  call s:c.Py("parseOCamlAnnot()")
 endfun
 
-map <LocalLeader>t :call OCamlPrintType("normal")<RETURN>
-vmap <LocalLeader>t :call OCamlPrintType("visual")<RETURN>
-map <LocalLeader>d :call OCamlGotoDefinition("normal")<RETURN>
-vmap <LocalLeader>d :call OCamlGotoDefinition("visual")<RETURN>
+exec 'nnoremap <buffer> '.s:c.map_print_type." :call g:addon_ocaml.Py('printOCamlType(\"normal\")')<CR>"
+exec 'vnoremap  <buffer> '.s:c.map_print_type." :call g:addon_ocaml.Py('printOCamlType(\"visual\")')<CR>"
+exec 'nnoremap <buffer> '.s:c.map_goto." :call g:addon_ocaml.Py(gotoOCamlDefinition(\"visual\")')<CR>"
+exec 'vnoremap <buffer> '.s:c.map_goto." :call g:addon_ocaml.Py(gotoOCamlDefinition(\"normal\")')<CR>"
+
+" }}}
 
 let &cpoptions=s:cposet
 unlet s:cposet
