@@ -226,8 +226,8 @@ endfun
 
 exec 'nnoremap <buffer> '.s:c.map_print_type." :call g:addon_ocaml.Py('printOCamlType(\"normal\")')<CR>"
 exec 'vnoremap  <buffer> '.s:c.map_print_type." :call g:addon_ocaml.Py('printOCamlType(\"visual\")')<CR>"
-exec 'nnoremap <buffer> '.s:c.map_goto." :call g:addon_ocaml.Py(gotoOCamlDefinition(\"visual\")')<CR>"
-exec 'vnoremap <buffer> '.s:c.map_goto." :call g:addon_ocaml.Py(gotoOCamlDefinition(\"normal\")')<CR>"
+exec 'nnoremap <buffer> '.s:c.map_goto." :call g:addon_ocaml.Py('gotoOCamlDefinition(\"visual\")')<CR>"
+exec 'vnoremap <buffer> '.s:c.map_goto." :call g:addon_ocaml.Py('gotoOCamlDefinition(\"normal\")')<CR>"
 
 " }}}
 

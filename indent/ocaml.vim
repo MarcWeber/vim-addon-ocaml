@@ -19,7 +19,10 @@ setlocal indentexpr=GetOCamlIndent()
 setlocal indentkeys+=0=and,0=class,0=constraint,0=done,0=else,0=end,0=exception,0=external,0=if,0=in,0=include,0=inherit,0=initializer,0=let,0=method,0=open,0=then,0=type,0=val,0=with,0;;,0>\],0\|\],0>},0\|,0},0\],0)
 setlocal nolisp
 setlocal nosmartindent
-setlocal textwidth=80
+
+" this along with setting fo below is so annoying. If you need this put it
+" into your ~/.vim/ftplugin/ocaml.vim file
+" setlocal textwidth=80
 
 " Comment formatting
 if !exists("no_ocaml_comments")
