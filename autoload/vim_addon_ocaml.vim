@@ -341,7 +341,7 @@ endf
 "on_thing_handler#HandleOnThing()
 
 
-function vim_addon_ocaml#OMLetFoldLevel(l)
+function! vim_addon_ocaml#OMLetFoldLevel(l)
 
   " This is for not merging blank lines around folds to them
   if getline(a:l) !~ '\S'
@@ -377,3 +377,17 @@ function vim_addon_ocaml#OMLetFoldLevel(l)
   return '='
 endfunction
 
+fun! vim_addon_ocaml#GFHandler() abort
+  let res = [ expand(expand('%:h').'/'.matchstr(expand('<cWORD>'),'[^;()[\]]*')) ]
+  for match in [matchstr(getline('.'), 'import\s*\zs[^;) \t]\+\ze'), matchstr(getline('.'), 'call\S*\s*\zs[^;) \t]\+\ze')]
+    if match == "" | continue | endif
+    call add(res, expand('%:h').'/'.match)
+  endfor
+
+  let r = matchlist(getline('.'), 'Called from file "\([^"]\+\)", line \(\d\+\)')
+  if empty(r)
+    return []
+  else
+    return [{ 'break': 1, 'filename' : r[1], 'line_nr': r[2] }]
+  endif
+endf

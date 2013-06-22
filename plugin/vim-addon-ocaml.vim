@@ -34,3 +34,6 @@ augroup end
 exec vam#DefineAndBind('s:l','g:vim_addon_toggle_buffer','{}')
 let s:l['ocaml_ml'] = funcref#Function('return vim_addon_toggle#Substitute('.string('\.ml').','.string('.mli').')')
 let s:l['ocaml_mli'] = funcref#Function('return vim_addon_toggle#Substitute('.string('\.mli').','.string('.ml').')')
+
+
+call on_thing_handler#AddOnThingHandler('g', funcref#Function('vim_addon_ocaml#GFHandler'))
