@@ -33,22 +33,6 @@ let s:c.map_goto = get(s:c, 'map_goto', '\d')
 let s:cposet=&cpoptions
 set cpo-=C
 
-" Called from .. line is for ocaml traces
-setlocal efm=
-      \%EFile\ \"%f\"\\,\ line\ %l\\,\ characters\ %c-%*\\d:,
-      \%EFile\ \"%f\"\\,\ line\ %l\\,\ character\ %c:%m,
-      \%+EReference\ to\ unbound\ regexp\ name\ %m,
-      \%Eocamlyacc:\ e\ -\ line\ %l\ of\ \"%f\"\\,\ %m,
-      \%Wocamlyacc:\ w\ -\ %m,
-      \%-Zmake%.%#,
-      \%C%m,
-      \%D%*\\a[%*\\d]:\ Entering\ directory\ `%f',
-      \%X%*\\a[%*\\d]:\ Leaving\ directory\ `%f',
-      \%D%*\\a:\ Entering\ directory\ `%f',
-      \%X%*\\a:\ Leaving\ directory\ `%f',
-      \%DMaking\ %*\\a\ in\ %f,
-      \Called\ from\ file\ \\\"%f\\\"\\,\ line\ %l\\,\ characters\ %c-%m
-
 " Add mappings, unless the user didn't want this.
 if !exists("no_plugin_maps") && !exists("no_ocaml_maps")
   " (un)commenting
