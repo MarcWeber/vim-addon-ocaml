@@ -218,4 +218,6 @@ exec 'vnoremap <buffer> '.s:c.map_goto." :call g:addon_ocaml.Py('gotoOCamlDefini
 let &cpoptions=s:cposet
 unlet s:cposet
 
+command! -buffer RevisedSyntax  update | call views#View("exec",["camlp4o", 'pr_r.cmo', expand('%')])
+
 " vim:sw=2

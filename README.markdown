@@ -2,7 +2,7 @@ vim ocaml scritps
 ====================
 
 This collection includes well known scripts I was pointed to such as ocaml
-indentation, annot support as well as omni completion support
+indentation, annot support
 
 I modified the indenting slightly so that the args  ".." and x y are not
 indented at all. (Using vim indentation they are indented the same as Printf
@@ -59,7 +59,11 @@ press gf on a thing to make Vim try to find the definition. These locations are 
 TIPS:
 ====================
 
+* https://github.com/def-lkb/merlin
+
 * learn about vim-addon-actions
+
+* don't use tags, but .annot, ocamlspot, merlin?
 
 * consider putting this into your ~/.ctags file
 
@@ -73,7 +77,8 @@ TIPS:
   --regex-OCaml=/^[ \t]*fun[ \t]+([A-Z'a-z0-9_]+)/\1/f,fun/
   --regex-OCaml=/^[ \t]*type[ \t]+([A-Z'a-z0-9_]+)/\1/t,type/
   --regex-OCaml=/\|[ \t]*([A-Z'a-z0-9_]+)[^-]*$/\1/c,cons/
-
+  --regex-Ocaml=/^[ \t]*module[ \t]+type[ \t]+([A-Z'a-z0-9_]+)/\1/t,type/
+  --regex-Ocaml=/^[ \t]*value[ \t]+([A-Z'a-z0-9_]+)/\1/t,type/
 
   (verify that ctags --list-maps has an ocaml entry. If it doesn't upgrade
   exuberant ctags)
