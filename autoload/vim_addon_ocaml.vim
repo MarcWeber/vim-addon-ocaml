@@ -192,7 +192,7 @@ endf
 fun! vim_addon_ocaml#Type(mode)
   let d = vim_addon_ocaml#SpotOrAnnot()
   if d.ext == 'annot'
-    call g:addon_ocaml.Py('printOCamlType(\"normal\")')
+    call g:addon_ocaml.Py('printOCamlType("normal")')
   else
     let d = vim_addon_ocaml#SpotAtCursor()
     call buf_utils#GotoBuf('OCAML_TYPES', {'create_cmd': 'sp'})
@@ -206,7 +206,7 @@ endf
 fun! vim_addon_ocaml#Goto(mode)
   let d = vim_addon_ocaml#SpotOrAnnot()
   if d.ext == 'annot'
-    call g:addon_ocaml.Py('gotoOCamlDefinition(\"visual\")')
+    call g:addon_ocaml.Py('gotoOCamlDefinition("visual")')
   else
     let d = vim_addon_ocaml#SpotAtCursor()['Spot']
     exec 'e '.fnameescape(d.file)
