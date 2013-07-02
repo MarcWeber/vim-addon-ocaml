@@ -162,3 +162,75 @@ fun! vim_addon_ocaml#GFHandler() abort
     return [{ 'break': 1, 'filename' : r[1], 'line_nr': r[2] }]
   endif
 endf
+
+
+fun! vim_addon_ocaml#SpotAtCursor()
+  let p = getpos('.')
+  let r = {}
+  let state = "out"
+  let type = []
+  for l in split(system('ocamlspot '.expand('%').':l'.p[1].'c'.p[2], ), "\n")
+    let m = matchlist(l, '^\([^:]\+\): \(.*\)')
+    if l =~ '^BYE!'
+      let r[key] = lines
+    elseif !empty(m) && m[1] != ''
+      if exists('lines') | let r[key] = lines | endif
+      let key = m[1]
+      let lines = [m[2]]
+    elseif lines != [] && exists('key')
+      call add(lines, l)
+    endif
+  endfor
+  if has_key(r, 'Spot')
+    " l.Spot[0] looks like this: </pr/ocaml/lib_executable/mylib/pMap.ml:l21c4b448:l21c7b451>
+    let m = matchlist(r.Spot[0], '^<\([^:]\+\):l\(\d\+\)c\(\d\+\)')
+    let r.Spot = {'file': m[1], 'line': m[2], 'col' : m[3]}
+  endif
+  return r
+endf
+
+fun! vim_addon_ocaml#Type(mode)
+  let d = vim_addon_ocaml#SpotOrAnnot()
+  if d.ext == 'annot'
+    call g:addon_ocaml.Py('printOCamlType(\"normal\")')
+  else
+    let d = vim_addon_ocaml#SpotAtCursor()
+    call buf_utils#GotoBuf('OCAML_TYPES', {'create_cmd': 'sp'})
+    let lines = has_key(d, 'Val') ? d.Val : d.Type
+    call append('$', lines)
+    normal G
+    wincmd w
+  endif
+endf
+
+fun! vim_addon_ocaml#Goto(mode)
+  let d = vim_addon_ocaml#SpotOrAnnot()
+  if d.ext == 'annot'
+    call g:addon_ocaml.Py('gotoOCamlDefinition(\"visual\")')
+  else
+    let d = vim_addon_ocaml#SpotAtCursor()['Spot']
+    exec 'e '.fnameescape(d.file)
+    exec d.line
+    exec 'normal '. d.col .'|'
+  endif
+endf
+
+
+fun! vim_addon_ocaml#OCamlParseAnnot()
+  call s:c.Py("parseOCamlAnnot()")
+endfun
+
+fun! vim_addon_ocaml#SpotOrAnnot()
+  let cmt = expand('%:r').'.cmt'
+  let annot = expand('%:r').'.annot'
+  if filereadable(cmt)
+    " use ocamlspot
+    return {'ext' : 'cmt' }
+  elseif filereadable(annot)
+    " use .annot file
+    return {'ext' : 'annot' }
+  else
+    throw "neither .annot nor .cmt (ocamlspot) file found"
+  endif
+endf
+

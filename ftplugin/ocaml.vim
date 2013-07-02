@@ -25,9 +25,6 @@
 
 if !exists('g:addon_ocaml') | let g:addon_ocaml = {} | endif | let s:c = g:addon_ocaml
 
-let s:c.map_print_type = get(s:c, 'map_print_type', '\t')
-let s:c.map_goto = get(s:c, 'map_goto', '\d')
-
 
 " Error handling -- helps moving where the compiler wants you to go
 let s:cposet=&cpoptions
@@ -204,14 +201,10 @@ fun! s:c.Py(command)
 endf
 
 
-fun! OCamlParseAnnot()
-  call s:c.Py("parseOCamlAnnot()")
-endfun
-
-exec 'nnoremap <buffer> '.s:c.map_print_type." :call g:addon_ocaml.Py('printOCamlType(\"normal\")')<CR>"
-exec 'vnoremap  <buffer> '.s:c.map_print_type." :call g:addon_ocaml.Py('printOCamlType(\"visual\")')<CR>"
-exec 'nnoremap <buffer> '.s:c.map_goto." :call g:addon_ocaml.Py('gotoOCamlDefinition(\"visual\")')<CR>"
-exec 'vnoremap <buffer> '.s:c.map_goto." :call g:addon_ocaml.Py('gotoOCamlDefinition(\"normal\")')<CR>"
+exec 'nnoremap <buffer> '.s:c.map_print_type." :call vim_addon_ocaml#Type('normal')<CR>"
+" exec 'vnoremap <buffer> '.s:c.map_print_type." :call g:addon_ocaml.Py('printOCamlType(\"visual\")')<CR>"
+exec 'nnoremap <buffer> '.s:c.map_goto." :call vim_addon_ocaml#Goto('normal')<CR>"
+" exec 'vnoremap <buffer> '.s:c.map_goto." :call g:addon_ocaml.Py('gotoOCamlDefinition(\"normal\")')<CR>"
 
 " }}}
 

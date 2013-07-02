@@ -8,7 +8,8 @@ command! OcamlSetEFM exec s:efm
 " vam#DefineAndBind('s:c','g:addon_ocaml','{}')
 if !exists('g:addon_ocaml') | let g:addon_ocaml = {} | endif | let s:c = g:addon_ocaml
 
-command! -nargs=0 MLFunctionByTye call vim_addon_ocaml#FunctionByType()
+let s:c.map_print_type = get(s:c, 'map_print_type', '\t')
+let s:c.map_goto = get(s:c, 'map_goto', '\d')
 
 " ocaml can't cope with UTF-8 (yet?)
 augroup SET_ENCODING_FOR_OCAML_FILES
